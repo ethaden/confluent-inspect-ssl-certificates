@@ -8,10 +8,7 @@ if [ \! -e ${SSL_DIR}/ca.key ]; then
 #keytool -genkeypair -noprompt -alias root -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -dname "CN=example.invalid" -validity 9365 -keypass password -keystore ${SSL_DIR}/ca.jks -storepass password -storetype pkcs12 -ext BasicConstraints:critical=ca:true -ext KeyUsage:critical=keyCertSign,cRLSign
     openssl req -x509 -newkey rsa:4096 -keyout ${SSL_DIR}/ca.key -out ${SSL_DIR}/ca.pem \
     -sha256 -days 3650 -nodes -subj "/C=DE/L=World/O=Confluent/OU=CSTA/CN=CA"
-#     \
-#    -addext "BasicConstraints:critical=ca:true" \
-#    -addext "keyUsage = digitalSignature, keyEncipherment, dataEncipherment, cRLSign, keyCertSign" \
-#    -addext "extendedKeyUsage = serverAuth, clientAuth"
+    keytool -import -noprompt -alias root -file ${SSL_DIR}/ca.pem -storetype JKS -storepass password -keystore ${SSL_DIR}/truststore.jks
 fi
 
 # Server
@@ -22,6 +19,7 @@ if [ \! -e ${SSL_DIR}/server.key ]; then
         -addext "keyUsage = digitalSignature,keyAgreement" \
         -addext "extendedKeyUsage = serverAuth"
     openssl x509 -req -sha256 -days 3650 -in ${SSL_DIR}/server.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/server.pem -copy_extensions "copy"
+    keytool -import -noprompt -alias server -file ${SSL_DIR}/server.pem -storetype JKS -storepass password -keystore ${SSL_DIR}/server.jks
 fi
 
 # Client
@@ -32,7 +30,9 @@ if [ \! -e ${SSL_DIR}/client.key ]; then
         -addext "keyUsage = digitalSignature,keyAgreement" \
         -addext "extendedKeyUsage = clientAuth"
     openssl x509 -req -sha256 -days 3650 -in ${SSL_DIR}/client.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/client.pem -copy_extensions "copy"
+    keytool -import -noprompt -alias client -file ${SSL_DIR}/client.pem -storetype JKS -storepass password -keystore ${SSL_DIR}/client.jks
 fi
+
 
 # Client expired
 if [ \! -e ${SSL_DIR}/client-expired.key ]; then
@@ -42,6 +42,7 @@ if [ \! -e ${SSL_DIR}/client-expired.key ]; then
         -addext "keyUsage = digitalSignature,keyAgreement" \
         -addext "extendedKeyUsage = clientAuth"'
     faketime 'yesterday 6 am' /bin/bash -c 'openssl x509 -req -sha256 -days 1 -in ${SSL_DIR}/client-expired.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/client-expired.pem -copy_extensions "copy"'
+    keytool -import -noprompt -alias client -file ${SSL_DIR}/client-expired.pem -storetype JKS -storepass password -keystore ${SSL_DIR}/client-expired.jks
 fi
 
 # Verify
