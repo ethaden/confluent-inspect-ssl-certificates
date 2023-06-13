@@ -14,21 +14,17 @@ import javax.net.ssl.TrustManagerFactory;
 
 class TestJavaSSLClient {
     public static void main(String args[]) {
-        System.out.println("USAGE: java -jar <server-jar-file> [port]");
-        System.out.println("");
-        System.out.println("If the third argument is TLS, it will start as\n"
-                + "a TLS/SSL file server, otherwise, it will be\n" + "an ordinary file server. \n"
-                + "If the fourth argument is true,it will require\n"
-                + "client authentication as well.");
+        System.out.println("USAGE: java -jar <server-jar-file>");
 
         int port = 1234;
+        String hostname = "localhost";
 
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
         }
 
         SSLSocketFactory ssf = TestJavaSSLClient.getSocketFactory();
-        try (Socket connection = ssf.createSocket("127.0.0.1", port);
+        try (Socket connection = ssf.createSocket(hostname, port);
             SSLSocket sslConnection = (SSLSocket) connection) {
             // sslListener
             //         .setEnabledCipherSuites(new String[] {"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256"});
@@ -56,9 +52,11 @@ class TestJavaSSLClient {
             KeyStore ksTrust = KeyStore.getInstance("JKS");
             ksTrust.load(new FileInputStream("./ssl/truststore.jks"), tsPassPhrase);
 
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            KeyManagerFactory kmf =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ksKeys, ksPassphrase);
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            TrustManagerFactory tmf =
+                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(ksTrust);
             // Build SSL context
             SSLContext ctx;

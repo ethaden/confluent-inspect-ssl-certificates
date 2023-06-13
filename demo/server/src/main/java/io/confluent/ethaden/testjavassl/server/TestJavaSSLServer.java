@@ -42,6 +42,7 @@ class TestJavaSSLServer {
                     BufferedReader in = new BufferedReader(
                             new InputStreamReader(clientSocket.getInputStream()));
                     while ((inputLine = in.readLine()) != null) {
+                        System.out.println(inputLine);
                         out.println(inputLine);
                     }
                 }
@@ -67,17 +68,11 @@ class TestJavaSSLServer {
             KeyStore ksTrust = KeyStore.getInstance("JKS");
             ksTrust.load(new FileInputStream("./ssl/truststore.jks"), tsPassPhrase);
 
-            //KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             KeyManagerFactory kmf =
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            System.out.println(
-                    "KeyManager is using algorithm " + KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ksKeys, ksPassphrase);
-            // TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
             TrustManagerFactory tmf =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            System.out.println(
-                    "TrustManager is using algorithm " + TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(ksTrust);
             // Build SSL context
             SSLContext ctx;
