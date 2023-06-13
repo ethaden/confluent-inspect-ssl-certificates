@@ -1,3 +1,5 @@
 demo/client/build
+demo/client/bin
 demo/server/build
+demo/server/bin
 demo/ssl

@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+    "settings": {
+        "java.compile.nullAnalysis.mode": "automatic",
+        "java.project.sourcePaths": [
+            "confluent-inspect-ssl-certificates",
+            ""
+        ]
+    }
+}
