@@ -7,17 +7,16 @@ import java.net.Socket;
 import java.security.KeyStore;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 class TestJavaSSLClient {
     public static void main(String args[]) {
-        System.out.println("USAGE: java -jar <server-jar-file>");
-
         int port = 1234;
         String hostname = "localhost";
+        System.out.println(String.format("Connecting to server %s on port %d", hostname, port));
+
 
         if (args.length >= 1) {
             port = Integer.parseInt(args[0]);
@@ -26,9 +25,6 @@ class TestJavaSSLClient {
         SSLSocketFactory ssf = TestJavaSSLClient.getSocketFactory();
         try (Socket connection = ssf.createSocket(hostname, port);
             SSLSocket sslConnection = (SSLSocket) connection) {
-            // sslListener
-            //         .setEnabledCipherSuites(new String[] {"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256"});
-            //sslListener.setEnabledProtocols(new String[] {"TLSv1.2"});
             PrintWriter out = new PrintWriter(connection.getOutputStream(), true);
             out.println("Hello World!");
         } catch (IOException e) {
@@ -42,15 +38,30 @@ class TestJavaSSLClient {
         try {
             // set up key manager to do server authentication
             // Open keystore
-            char[] ksPassphrase = "password".toCharArray();
-            // KeyStore kmf = KeyManagerFactory.getInstance("SunX509");
+            String ksPass = System.getProperty("javax.net.ssl.keyStorePassword");
+            if (ksPass==null) {
+                ksPass = "password";
+            }
+            char[] ksPassphrase = ksPass.toCharArray();
             KeyStore ksKeys = KeyStore.getInstance("JKS");
-            ksKeys.load(new FileInputStream("./ssl/client.jks"), ksPassphrase);
+            String keyStoreFilename = System.getProperty("javax.net.ssl.keyStore");
+            if (keyStoreFilename == null) {
+                keyStoreFilename = "./ssl/client.jks";
+            }
+            ksKeys.load(new FileInputStream(keyStoreFilename), ksPassphrase);
             // Initialize key manager
             // Open trust store
-            char[] tsPassPhrase = "password".toCharArray();
+            String tsPass = System.getProperty("javax.net.ssl.trustStorePassword");
+            if (tsPass==null) {
+                tsPass = "password";
+            }
+            char[] tsPassPhrase = tsPass.toCharArray();
             KeyStore ksTrust = KeyStore.getInstance("JKS");
-            ksTrust.load(new FileInputStream("./ssl/truststore.jks"), tsPassPhrase);
+            String trustStoreFilename = System.getProperty("javax.net.ssl.trustStore");
+            if (trustStoreFilename == null) {
+                trustStoreFilename = "./ssl/truststore.jks";
+            }
+            ksTrust.load(new FileInputStream(trustStoreFilename), tsPassPhrase);
 
             KeyManagerFactory kmf =
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());

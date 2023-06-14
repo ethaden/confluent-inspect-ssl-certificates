@@ -8,32 +8,39 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
-import javax.net.ServerSocketFactory;
+import java.security.Security;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 class TestJavaSSLServer {
     public static void main(String args[]) {
-        System.out.println("USAGE: java -jar <server-jar-file>");
-
+        System.out.println("Usage: java -jar <jar file> [-e]");
+        System.out.println("  -e: Report common name of expired client certificate in execption");
         int port = 1234;
+        System.out.println(String.format("Starting server on port %d", port));
 
+        boolean reportCommonNameIfExpired = false;
         if (args.length >= 1) {
-            port = Integer.parseInt(args[0]);
+            if (args[0].equals("-e")) {
+                reportCommonNameIfExpired = true;
+            }
         }
 
-        SSLServerSocketFactory ssf = TestJavaSSLServer.getServerSocketFactory();
-        //ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
+
+        SSLServerSocketFactory ssf = TestJavaSSLServer.getServerSocketFactory(reportCommonNameIfExpired);
+        while (true) {
         try (ServerSocket listener = ssf.createServerSocket(port);
                 SSLServerSocket sslListener = (SSLServerSocket) listener) {
             sslListener.setEnabledCipherSuites(
                     new String[] {"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256", "TLS_AES_256_GCM_SHA384"});
             // sslListener.setEnabledProtocols(new String[] {"TLSv1.2"});
             sslListener.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
-            // sslListener.setNeedClientAuth(false);
+            sslListener.setNeedClientAuth(true);
 
             String inputLine;
             while (true) {
@@ -47,37 +54,63 @@ class TestJavaSSLServer {
                     }
                 }
             }
+        } catch (javax.net.ssl.SSLHandshakeException e) {
+            System.out.println("An SSLHandshakeException occurred. Continuing...");
+            e.printStackTrace();
         } catch (IOException e) {
             System.out.println("Unable to initiate connection: " + e.getMessage());
             e.printStackTrace();
+            break;
         }
     }
 
-    private static SSLServerSocketFactory getServerSocketFactory() {
+    }
+
+    private static SSLServerSocketFactory getServerSocketFactory(boolean reportCommonNameIfExpired) {
         SSLServerSocketFactory ssf = null;
         try {
             // set up key manager to do server authentication
             // Open keystore
-            char[] ksPassphrase = "password".toCharArray();
-            // KeyStore kmf = KeyManagerFactory.getInstance("SunX509");
+            String ksPass = System.getProperty("javax.net.ssl.keyStorePassword");
+            if (ksPass == null) {
+                ksPass = "password";
+            }
+            char[] ksPassphrase = ksPass.toCharArray();
             KeyStore ksKeys = KeyStore.getInstance("JKS");
-            ksKeys.load(new FileInputStream("./ssl/server.jks"), ksPassphrase);
+            String keyStoreFilename = System.getProperty("javax.net.ssl.keyStore");
+            if (keyStoreFilename == null) {
+                keyStoreFilename = "./ssl/server.jks";
+            }
+            ksKeys.load(new FileInputStream(keyStoreFilename), ksPassphrase);
             // Initialize key manager
             // Open trust store
-            char[] tsPassPhrase = "password".toCharArray();
+            String tsPass = System.getProperty("javax.net.ssl.trustStorePassword");
+            if (tsPass == null) {
+                tsPass = "password";
+            }
+            char[] tsPassPhrase = tsPass.toCharArray();
             KeyStore ksTrust = KeyStore.getInstance("JKS");
-            ksTrust.load(new FileInputStream("./ssl/truststore.jks"), tsPassPhrase);
+            String trustStoreFilename = System.getProperty("javax.net.ssl.trustStore");
+            if (trustStoreFilename == null) {
+                trustStoreFilename = "./ssl/truststore.jks";
+            }
+            ksTrust.load(new FileInputStream(trustStoreFilename), tsPassPhrase);
 
             KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ksKeys, ksPassphrase);
             TrustManagerFactory tmf =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(ksTrust);
+            TrustManager[] byPassTrustManagers = tmf.getTrustManagers();
+            if (reportCommonNameIfExpired) {
+                byPassTrustManagers = new TrustManager[] { new TrustManagerWithCNReporting() };
+            }
+            
             // Build SSL context
             SSLContext ctx;
             ctx = SSLContext.getInstance("TLS");
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            ctx.init(kmf.getKeyManagers(), byPassTrustManagers, null);
             // ctx.init(kmf.getKeyManagers(), null, null);
 
             ssf = ctx.getServerSocketFactory();

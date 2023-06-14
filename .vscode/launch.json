@@ -25,7 +25,8 @@
             "mainClass": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer",
             "projectName": "server",
             "cwd": "${workspaceFolder}/demo",
-            "vmArgs": ["-Djavax.net.ssl.trustStore=ssl/truststore.jk"]
+            // "vmArgs": ["-Djavax.net.ssl.trustStore=ssl/truststore.jk"],
+            "args": ["-e"]
         }
     ]
 }
