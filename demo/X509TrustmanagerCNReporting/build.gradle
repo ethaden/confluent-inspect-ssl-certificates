@@ -7,7 +7,7 @@
 
 plugins {
     id 'java'
-    id 'application'
+    id 'java-library'
 }
 
 repositories {
@@ -20,15 +20,10 @@ java {
     withSourcesJar()
 }
 
-dependencies {
-    implementation project(':X509TrustmanagerCNReporting')
-}
-
 jar {
     manifest {
         attributes(
-                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" "),
-                "Main-Class": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer"
+                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" ")
         )
     }
 }

@@ -2,4 +2,6 @@ demo/client/build
 demo/client/bin
 demo/server/build
 demo/server/bin
+demo/X509TrustmanagerCNReporting/build
+demo/X509TrustmanagerCNReporting/bin
 demo/ssl

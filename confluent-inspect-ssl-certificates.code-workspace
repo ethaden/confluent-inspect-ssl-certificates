@@ -9,6 +9,7 @@
         "java.project.sourcePaths": [
             "confluent-inspect-ssl-certificates",
             ""
-        ]
+        ],
+        "java.configuration.updateBuildConfiguration": "interactive"
     }
 }

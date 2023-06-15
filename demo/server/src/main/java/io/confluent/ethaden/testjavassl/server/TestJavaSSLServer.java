@@ -8,14 +8,12 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.security.Security;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 class TestJavaSSLServer {
     public static void main(String args[]) {
@@ -82,6 +80,9 @@ class TestJavaSSLServer {
                 keyStoreFilename = "./ssl/server.jks";
             }
             ksKeys.load(new FileInputStream(keyStoreFilename), ksPassphrase);
+            KeyManagerFactory kmf =
+                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ksKeys, ksPassphrase);
             // Initialize key manager
             // Open trust store
             String tsPass = System.getProperty("javax.net.ssl.trustStorePassword");
@@ -96,15 +97,12 @@ class TestJavaSSLServer {
             }
             ksTrust.load(new FileInputStream(trustStoreFilename), tsPassPhrase);
 
-            KeyManagerFactory kmf =
-                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(ksKeys, ksPassphrase);
             TrustManagerFactory tmf =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(ksTrust);
             TrustManager[] byPassTrustManagers = tmf.getTrustManagers();
             if (reportCommonNameIfExpired) {
-                byPassTrustManagers = new TrustManager[] { new TrustManagerWithCNReporting() };
+                byPassTrustManagers = new TrustManager[] { new X509TrustManagerWithCNReporting(trustManager) };
             }
             
             // Build SSL context

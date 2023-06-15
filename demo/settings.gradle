@@ -8,5 +8,6 @@
  */
 
 rootProject.name = 'TestChatSSL'
+include ('X509TrustmanagerCNReporting')
 include ('server')
 include ('client')
