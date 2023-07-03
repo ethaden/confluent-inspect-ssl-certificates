@@ -3,10 +3,10 @@ package io.confluent.ethaden.x509trustmanagercnreporting;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
-import X509TrustManagerWithCNReporting;
 
 public final class X509TrustManagerFactorySpiWithCNReporting extends TrustManagerFactorySpi {
 
@@ -27,7 +27,13 @@ public final class X509TrustManagerFactorySpiWithCNReporting extends TrustManage
     @Override
     protected TrustManager[] engineGetTrustManagers() {
         System.out.println("engineGetTrustManagers() called");
-        return new TrustManager[] {new X509TrustManagerWithCNReporting(this.truststore)};
+        try {
+            return new TrustManager[] {new X509TrustManagerWithCNReporting(this.truststore)};
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
 
