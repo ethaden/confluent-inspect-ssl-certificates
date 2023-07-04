@@ -20,16 +20,17 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-public final class X509TrustManagerWithCNReporting implements X509TrustManager {
+public final class ExpiredCertReporter implements X509TrustManager {
 
     private X509TrustManager trustManager = null;
 
-    public X509TrustManagerWithCNReporting(KeyStore trustStore) throws KeyStoreException, NoSuchAlgorithmException {
+    public ExpiredCertReporter(KeyStore trustStore)
+            throws KeyStoreException, NoSuchAlgorithmException {
 
         TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory.getInstance("PKIX");
         tmf.init(trustStore);
-        for (TrustManager tm: tmf.getTrustManagers()) {
+        for (TrustManager tm : tmf.getTrustManagers()) {
             if (tm instanceof X509TrustManager)
                 this.trustManager = (X509TrustManager) tm;
         }
@@ -39,35 +40,43 @@ public final class X509TrustManagerWithCNReporting implements X509TrustManager {
         return new X509Certificate[0];
     }
 
-    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
+            throws CertificateException {
+        CertificateException invalidException = null;
         try {
             this.trustManager.checkClientTrusted(chain, authType);
+
         } catch (CertificateException e) {
-            X509Certificate wrappedCert = new EternalCertificate(chain[0]);
-            X509Certificate[] wrappedCertChain = chain.clone();
-            wrappedCertChain[0] = wrappedCert;
-            try {
-                this.trustManager.checkClientTrusted(wrappedCertChain, authType);
-                // Certificate is invalid due to being expired. Grab the common name and report it back
-                String commonName = wrappedCert.getSubjectX500Principal().getName();
-                System.out.println("Found expired certificate for common name "+commonName);
-            } catch (CertificateException f) {
-                // Do nothing here. Throw original exception below
-                e.addSuppressed(f);
-            }
+            invalidException = e;
+        }
+        if (invalidException==null)
+        {
+            // Certificate is valid. Return.
+            return;
+        }
+        // Certificate check is invalid. Check whether it is just expired
+        X509Certificate wrappedCert = new EternalCertificate(chain[0]);
+        X509Certificate[] wrappedCertChain = chain.clone();
+        wrappedCertChain[0] = wrappedCert;
+        try {
+            this.trustManager.checkClientTrusted(wrappedCertChain, authType);
             // Certificate is invalid due to being expired. Grab the common name and report it back
             String commonName = wrappedCert.getSubjectX500Principal().getName();
-            System.out.println("Found expired certificate for common name "+commonName);
-            throw e;
+            Date expiredDate = wrappedCert.getNotAfter();
+            invalidException = new CertificateException("Certificate for common name \"" + commonName + "\" expired on "+expiredDate, invalidException);
+        } catch (CertificateException f) {
+            // Do nothing here. Throw original or updated exception below
         }
-        System.out.println("Check successful");
+        throw invalidException;
     }
 
-    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+    public void checkServerTrusted(X509Certificate[] chain, String authType)
+            throws CertificateException {
         this.trustManager.checkServerTrusted(chain, authType);
     }
 
-    // The code for the following class has been copied from here: https://gist.github.com/divergentdave/9a68d820e3610513bd4fcdc4ae5f91a1
+    // The code for the following class has been copied from here:
+    // https://gist.github.com/divergentdave/9a68d820e3610513bd4fcdc4ae5f91a1
     private class EternalCertificate extends X509Certificate {
         private final X509Certificate originalCertificate;
 
@@ -76,12 +85,14 @@ public final class X509TrustManagerWithCNReporting implements X509TrustManager {
         }
 
         @Override
-        public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
+        public void checkValidity()
+                throws CertificateExpiredException, CertificateNotYetValidException {
             // Ignore notBefore/notAfter
         }
 
         @Override
-        public void checkValidity(Date date) throws CertificateExpiredException, CertificateNotYetValidException {
+        public void checkValidity(Date date)
+                throws CertificateExpiredException, CertificateNotYetValidException {
             // Ignore notBefore/notAfte
         }
 
@@ -166,12 +177,15 @@ public final class X509TrustManagerWithCNReporting implements X509TrustManager {
         }
 
         @Override
-        public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+        public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException,
+                InvalidKeyException, NoSuchProviderException, SignatureException {
             originalCertificate.verify(key);
         }
 
         @Override
-        public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+        public void verify(PublicKey key, String sigProvider)
+                throws CertificateException, NoSuchAlgorithmException, InvalidKeyException,
+                NoSuchProviderException, SignatureException {
             originalCertificate.verify(key, sigProvider);
         }
 

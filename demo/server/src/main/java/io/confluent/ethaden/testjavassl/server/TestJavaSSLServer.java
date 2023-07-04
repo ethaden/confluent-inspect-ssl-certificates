@@ -8,14 +8,15 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.security.cert.CertificateException;
+import java.security.Provider;
+import java.security.Security;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import io.confluent.ethaden.x509trustmanagercnreporting.X509TrustManagerWithCNReporting;
+import io.confluent.ethaden.x509trustmanagercnreporting.ExpiredCertReporter;
 
 class TestJavaSSLServer {
     public static void main(String args[]) {
@@ -60,7 +61,7 @@ class TestJavaSSLServer {
                     }
                 }
             } catch (javax.net.ssl.SSLHandshakeException e) {
-                System.out.println("An SSLHandshakeException occurred. Continuing...");
+                System.out.println("An SSLHandshakeException occurred: " + e.getMessage());
                 e.printStackTrace();
             } catch (IOException e) {
                 System.out.println("Unable to initiate connection: " + e.getMessage());
@@ -112,15 +113,17 @@ class TestJavaSSLServer {
             if (trustStoreFilename == null) {
                 trustStoreFilename = "./ssl/truststore.jks";
             }
+            String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType");
+            if (trustStoreType == null) {
+                trustStoreType = TrustManagerFactory.getDefaultAlgorithm();
+            }
             ksTrust.load(new FileInputStream(trustStoreFilename), tsPassPhrase);
 
-            TrustManagerFactory tmf =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustStoreType);
             tmf.init(ksTrust);
             TrustManager[] byPassTrustManagers = tmf.getTrustManagers();
             if (reportCommonNameIfExpired) {
-                byPassTrustManagers =
-                        new TrustManager[] {new X509TrustManagerWithCNReporting(ksTrust)};
+                byPassTrustManagers = new TrustManager[] {new ExpiredCertReporter(ksTrust)};
             }
 
             // Build SSL context

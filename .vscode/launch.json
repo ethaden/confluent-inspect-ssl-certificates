@@ -20,13 +20,31 @@
         },
         {
             "type": "java",
-            "name": "TestJavaSSLServer",
+            "name": "TestJavaSSLServer (disable custom truststore)",
+            "request": "launch",
+            "mainClass": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer",
+            "projectName": "server",
+            "cwd": "${workspaceFolder}/demo"
+        },
+        {
+            "type": "java",
+            "name": "TestJavaSSLServer (enable custom truststore)",
             "request": "launch",
             "mainClass": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer",
             "projectName": "server",
             "cwd": "${workspaceFolder}/demo",
             // "vmArgs": ["-Djavax.net.ssl.trustStore=ssl/truststore.jk"],
             "args": ["-e"]
+        },
+        {
+            "type": "java",
+            "name": "TestJavaSSLServer (custom truststore algorithm)",
+            "request": "launch",
+            "mainClass": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer",
+            "projectName": "server",
+            "cwd": "${workspaceFolder}/demo",
+            //"vmArgs": ["-Djavax.net.ssl.trustStoreType=ExpiredCertReporter", "-Djava.security.properties=java.security"]
+            "vmArgs": ["-Djava.security.properties=java.security"]
         }
     ]
 }

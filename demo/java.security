@@ -1,0 +1,2 @@
+security.provider.13=io.confluent.ethaden.x509trustmanagercnreporting.ExpiredCertReporterProvider
+ssl.TrustManagerFactory.algorithm=ExpiredCertReporter
