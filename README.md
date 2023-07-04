@@ -1,5 +1,10 @@
 # This is a demo to explore how to deal with expired SSL certificates
 
+This proof-of-concept solves the problem, that no useful information is generated if a client with an expired but otherwise valid SSL certificate connects to an SSL-protected server. In complex IT environments it might be pretty hard to identify the misconfigured client.
+In this example code, the thrown exception is slightly updated to include the common name of the certificate, but only if the certificate is just expired and otherwise valid. This should reduce the potential of misuse to a minimum.
+
+WARNING: You use this code at your own risk! Please do not use it for production systems. The author may not be held responsible for any harm caused by this code!
+
 ## Generating SSL certificates
 
 Use the script found in the `demo` folder for generating SSL certificates:
@@ -52,10 +57,7 @@ java -classpath server/build/libs/server-0.1.0.jar:X509TrustmanagerCNReporting/b
     io.confluent.ethaden.testjavassl.server.TestJavaSSLServer
 ```
 
-
-
-WARNING: You use this code at your own risk! Please do not use it for production systems. The author may not be held responsible for any harm caused by this code!
-
+In all cases, check the exception thrown whenever a client with an expired SSL certificate connects to the server, see below.
 
 ## Running the client
 In `demo` run:
