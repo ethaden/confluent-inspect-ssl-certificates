@@ -93,7 +93,7 @@ public final class ExpiredCertReporter implements X509TrustManager {
         @Override
         public void checkValidity(Date date)
                 throws CertificateExpiredException, CertificateNotYetValidException {
-            // Ignore notBefore/notAfte
+            // Ignore notBefore/notAfter
         }
 
         @Override

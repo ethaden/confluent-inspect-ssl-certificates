@@ -1,0 +1,82 @@
+---
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: ${ZK_HOST}
+    hostname: ${ZK_HOST}
+    ports:
+      - "${ZK_PORT}:${ZK_PORT}"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: ${ZK_PORT}
+    healthcheck:
+      interval: 10s
+      retries: 25
+      test: echo srvr | nc zookeeper 32181 || exit 1
+
+  server:
+    image: confluentinc/cp-kafka:latest
+    container_name: ${BROKER_HOST}
+    hostname: ${BROKER_HOST}
+    ports:
+      - "${BROKER_PORT}:${BROKER_PORT}"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: '${ZK_HOST}:${ZK_PORT}'
+      KAFKA_ADVERTISED_LISTENERS: 'SSL://${BROKER_HOST}:${BROKER_PORT}'
+      KAFKA_SSL_KEYSTORE_FILENAME: server.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: cert_creds
+      KAFKA_SSL_KEY_CREDENTIALS: cert_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: cert_creds
+      KAFKA_SSL_CLIENT_AUTH: 'required'
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - ./ssl:/etc/kafka/secrets
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry
+    container_name: ${SR_HOST}
+    hostname: ${SR_HOST}
+    depends_on:
+      - ${ZK_HOST}
+      - ${BROKER_HOST}
+    ports:
+      - "${SR_PORT}:${SR_PORT}"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: ${SR_HOST}
+      SCHEMA_REGISTRY_LISTENERS: 'https://0.0.0.0:${SR_PORT}'
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: '${ZK_HOST}:${ZK_PORT}'
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'SSL://${BROKER_HOST}:${BROKER_PORT}'
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
+      SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_SSL_KEY_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
+      SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
+      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: https
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+      SCHEMA_REGISTRY_SSL_CLIENT_AUTH: 'true'
+    volumes:
+      - ./ssl:/etc/schema-registry/secrets
+
+  # schemaregistryui:
+  #   image: landoop/schema-registry-ui
+  #   container_name: schemaregistryui
+  #   hostname: schemaregistryui
+  #   ports:
+  #   - "${SRUI_PORT}:${SRUI_PORT}"
+  #   environment:
+  #     SCHEMAREGISTRY_URL: 'https://${SR_HOST}:${SR_PORT}'
+  #     PROXY: "true"

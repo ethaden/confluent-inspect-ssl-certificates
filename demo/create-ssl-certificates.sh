@@ -16,8 +16,9 @@ if [ \! -e ${SSL_DIR}/server.key ]; then
     openssl genrsa -out ${SSL_DIR}/server.key 2048
     # Sign
     openssl req -new -key ${SSL_DIR}/server.key -subj req -new -out ${SSL_DIR}/server.csr -subj "/C=DE/L=World/O=Confluent/OU=CSTA/CN=localhost" \
+        -addext "subjectAltName=DNS:localhost,DNS:server,DNS:broker,DNS:broker-ssl" \
         -addext "keyUsage = digitalSignature,keyAgreement" \
-        -addext "extendedKeyUsage = serverAuth"
+        -addext "extendedKeyUsage = clientAuth, serverAuth"
     openssl x509 -nopass -req -sha256 -days 3650 -in ${SSL_DIR}/server.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/server.pem -copy_extensions "copy"
     openssl pkcs12 -export -in ${SSL_DIR}/server.pem -inkey ${SSL_DIR}/server.key \
                -out ${SSL_DIR}/server.p12 -name localhost \
@@ -33,6 +34,7 @@ if [ \! -e ${SSL_DIR}/client.key ]; then
     openssl genrsa -out ${SSL_DIR}/client.key 2048
     # Sign
     openssl req -new -key ${SSL_DIR}/client.key -subj req -new -out ${SSL_DIR}/client.csr -subj "/C=DE/L=World/O=Confluent/OU=CSTA/CN=Client" \
+        -addext "subjectAltName = DNS:localhost,DNS:client" \
         -addext "keyUsage = digitalSignature,keyAgreement" \
         -addext "extendedKeyUsage = clientAuth"
     openssl x509 -req -sha256 -days 3650 -in ${SSL_DIR}/client.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/client.pem -copy_extensions "copy"
@@ -51,6 +53,7 @@ if [ \! -e ${SSL_DIR}/client-expired.key ]; then
     openssl genrsa -out ${SSL_DIR}/client-expired.key 2048
     # Sign
     faketime 'yesterday 12 pm' /bin/bash -c 'openssl req -new -key ${SSL_DIR}/client-expired.key -subj req -new -out ${SSL_DIR}/client-expired.csr -subj "/C=DE/L=World/O=Confluent/OU=CSTA/CN=Client Expired" \
+        -addext "subjectAltName = DNS:localhost,DNS:client" \
         -addext "keyUsage = digitalSignature,keyAgreement" \
         -addext "extendedKeyUsage = clientAuth"'
     faketime 'yesterday 6 am' /bin/bash -c 'openssl x509 -req -sha256 -days 1 -in ${SSL_DIR}/client-expired.csr -CA ${SSL_DIR}/ca.pem -CAkey ${SSL_DIR}/ca.key -out ${SSL_DIR}/client-expired.pem -copy_extensions "copy"'
@@ -67,3 +70,5 @@ fi
 # openssl verify -verbose -CAfile ${SSL_DIR}/ca.pem ${SSL_DIR}/server.pem
 # openssl verify -verbose -CAfile ${SSL_DIR}/ca.pem ${SSL_DIR}/client.pem
 # openssl verify -verbose -CAfile ${SSL_DIR}/ca.pem ${SSL_DIR}/client-expired.pem
+
+echo "password" > ${SSL_DIR}/cert_creds
