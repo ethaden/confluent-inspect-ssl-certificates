@@ -37,39 +37,43 @@ services:
       KAFKA_SECURITY_PROTOCOL: SSL
       KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.request.logger=DEBUG"
+      EXTRA_ARGS: -Djava.security.properties=/etc/kafka/java.security
     volumes:
       - ./ssl:/etc/kafka/secrets
+      - ./java.security:/etc/kafka/java.security
+      - ./X509TrustmanagerCNReporting/build/libs/X509TrustmanagerCNReporting-0.1.0.jar:/usr/share/java/kafka/X509TrustmanagerCNReporting-0.1.0.jar
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry
-    container_name: ${SR_HOST}
-    hostname: ${SR_HOST}
-    depends_on:
-      - ${ZK_HOST}
-      - ${BROKER_HOST}
-    ports:
-      - "${SR_PORT}:${SR_PORT}"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: ${SR_HOST}
-      SCHEMA_REGISTRY_LISTENERS: 'https://0.0.0.0:${SR_PORT}'
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: '${ZK_HOST}:${ZK_PORT}'
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'SSL://${BROKER_HOST}:${BROKER_PORT}'
-      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
-      SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_SSL_KEY_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
-      SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
-      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
-      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: https
-      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
-      SCHEMA_REGISTRY_SSL_CLIENT_AUTH: 'true'
-    volumes:
-      - ./ssl:/etc/schema-registry/secrets
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry
+  #   container_name: ${SR_HOST}
+  #   hostname: ${SR_HOST}
+  #   depends_on:
+  #     - ${ZK_HOST}
+  #     - ${BROKER_HOST}
+  #   ports:
+  #     - "${SR_PORT}:${SR_PORT}"
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: ${SR_HOST}
+  #     SCHEMA_REGISTRY_LISTENERS: 'https://0.0.0.0:${SR_PORT}'
+  #     SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: '${ZK_HOST}:${ZK_PORT}'
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'SSL://${BROKER_HOST}:${BROKER_PORT}'
+  #     SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
+  #     SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
+  #     SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/server.jks
+  #     SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_SSL_KEY_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
+  #     SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/truststore.jks
+  #     SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: ${SSL_SECRET}
+  #     SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: https
+  #     SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+  #     SCHEMA_REGISTRY_SSL_CLIENT_AUTH: 'true'
+  #   volumes:
+  #     - ./ssl:/etc/schema-registry/secrets
 
   # schemaregistryui:
   #   image: landoop/schema-registry-ui

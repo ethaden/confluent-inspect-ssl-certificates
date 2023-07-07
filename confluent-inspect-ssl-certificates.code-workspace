@@ -10,6 +10,6 @@
             "confluent-inspect-ssl-certificates",
             ""
         ],
-        "java.configuration.updateBuildConfiguration": "interactive"
+        "java.configuration.updateBuildConfiguration": "automatic"
     }
 }

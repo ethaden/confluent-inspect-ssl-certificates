@@ -19,16 +19,19 @@ import java.util.Set;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class ExpiredCertReporter implements X509TrustManager {
 
     private X509TrustManager trustManager = null;
+    // private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    protected static final Logger parentLogger = LogManager.getLogger();
 
     public ExpiredCertReporter(KeyStore trustStore)
             throws KeyStoreException, NoSuchAlgorithmException {
 
-        TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("PKIX");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(trustStore);
         for (TrustManager tm : tmf.getTrustManagers()) {
             if (tm instanceof X509TrustManager)
@@ -49,8 +52,7 @@ public final class ExpiredCertReporter implements X509TrustManager {
         } catch (CertificateException e) {
             invalidException = e;
         }
-        if (invalidException==null)
-        {
+        if (invalidException == null) {
             // Certificate is valid. Return.
             return;
         }
@@ -63,7 +65,11 @@ public final class ExpiredCertReporter implements X509TrustManager {
             // Certificate is invalid due to being expired. Grab the common name and report it back
             String commonName = wrappedCert.getSubjectX500Principal().getName();
             Date expiredDate = wrappedCert.getNotAfter();
-            invalidException = new CertificateException("Certificate for common name \"" + commonName + "\" expired on "+expiredDate, invalidException);
+            parentLogger.info("Certificate for common name \"" + commonName + "\" expired on " + expiredDate,
+                    invalidException);
+            invalidException = new CertificateException(
+                    "Certificate for common name \"" + commonName + "\" expired on " + expiredDate,
+                    invalidException);
         } catch (CertificateException f) {
             // Do nothing here. Throw original or updated exception below
         }

@@ -7,6 +7,10 @@ CAUTION: Everything contained in this repository is not supported by Confluent.
 
 DISCLAIMER AND WARNING: You use this code at your own risk! Please do not use it for production systems. The author may not be held responsible for any harm caused by this code!
 
+## Pre-conditions
+Please install and use Java 11.x for compiling the code (newer versions won't be compatible with the Kafka binaries in the docker images).
+You also need openssl tools. And you might need to install gradle, too.
+
 ## Generating SSL certificates
 
 Use the script found in the `demo` folder for generating SSL certificates:
@@ -32,18 +36,20 @@ java -Djavax.net.ssl.keyStore="./ssl/server.jks" \
   -jar server/build/libs/server-0.1.0.jar
 ```
 
+However, as this code depends on log4j, you would need to ensure manually to have all the external libs on the classpath.
+Therefore, this project provides some custom gradle tasks to make your life easier.
+
 ## Running the server
 Using the server with just the standard SSL certificate validation of Java (no reporting of common name of expired certificates) can be done by running the following in subfolder `demo`:
 
 ```bash
-java -jar server/build/libs/server-0.1.0.jar
+./gradlew :server:run
 ```
 
 Alternatively, a custom trust manager factory can be used by specifying command line option `-e`:
 
 ```bash
-java -classpath server/build/libs/server-0.1.0.jar:X509TrustmanagerCNReporting/build/libs/X509TrustmanagerCNReporting-0.1.0.jar \
-    io.confluent.ethaden.testjavassl.server.TestJavaSSLServer -e
+./gradlew :server:run --args="-e"
 ```
 
 Here, obviously the code of the application needs to be updated.
@@ -54,20 +60,21 @@ For this to work, a custom Java security provider has been implemented (in `Expi
 Now run the following in folder `demo`:
 
 ```bash
-java -classpath server/build/libs/server-0.1.0.jar:X509TrustmanagerCNReporting/build/libs/X509TrustmanagerCNReporting-0.1.0.jar \
-    -Djava.security.properties=java.security \
-    io.confluent.ethaden.testjavassl.server.TestJavaSSLServer
+./gradlew :server:runWithLogging
 ```
+
 
 In all cases, check the exception thrown whenever a client with an expired SSL certificate connects to the server, see below.
 
 ## Running the client
-In `demo` run:
+In `demo` run (using the valid certificate):
 
 ```bash
 java -jar client/build/libs/client-0.1.0.jar
 ```
-Run the client with a valid client certificate:
+
+
+Run the client with a valid client certificate explicitely:
 
 ```bash
 java -Djavax.net.ssl.keyStore="./ssl/client.jks" \
@@ -75,6 +82,12 @@ java -Djavax.net.ssl.keyStore="./ssl/client.jks" \
   -Djavax.net.ssl.trustStore="./ssl/truststore.jks" \
   -Djavax.net.ssl.trustStorePassword="password" \
   -jar client/build/libs/client-0.1.0.jar
+```
+
+For convenience, this gradle task will do exactly the same:
+
+```bash
+./gradlew :client:run
 ```
 
 Run the client with an expired client certificate:
@@ -85,6 +98,12 @@ java -Djavax.net.ssl.keyStore="./ssl/client-expired.jks" \
   -Djavax.net.ssl.trustStore="./ssl/truststore.jks" \
   -Djavax.net.ssl.trustStorePassword="password" \
   -jar client/build/libs/client-0.1.0.jar
+```
+
+Again, for convenience, this gradle task will do exactly the same:
+
+```bash
+./gradlew :client:runWithExpiredCert
 ```
 
 
@@ -102,3 +121,51 @@ Now try to do the same with a valid but expired client certificate:
 openssl s_client -connect localhost:1234 -verifyCAfile ssl/ca.pem  \
   -cert ssl/client-expired.pem -key ssl/client-expired.key
 ```
+
+
+## Using the proof-of-concept with Confluent Platform
+Warning: This is experimental.
+
+Create the certificates as shown above. Then start the docker containers:
+
+```bash
+docker-compose up -d
+```
+
+Check that everything is running:
+
+```bash
+docker-compose ps
+```
+
+### Producing data
+First, add an entry to your /etc/hosts in order to make sure name resolution works:
+
+```
+127.0.0.1  server
+```
+
+Then produce data to topic `test` (within folder `demo`):
+
+```bash
+kafka-console-producer --bootstrap-server localhost:9092 --producer.config kafka/producer.properties -topic test
+```
+
+Read the data again (in folder `demo`):
+
+```bash
+kafka-console-consumer --bootstrap-server localhost:9092 --consumer.config kafka/consumer.properties --from-beginning --topic test
+```
+
+Try now to consume data, but use an expired SSL certificate:
+
+```bash
+kafka-console-consumer --bootstrap-server localhost:9092 --consumer.config kafka/consumer-expired-ssl.properties --from-beginning --topic test
+```
+
+In parallel in a different shell, check the broker logs by running:
+
+```bash
+docker-compose logs -f server
+```
+

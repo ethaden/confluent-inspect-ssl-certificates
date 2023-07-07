@@ -20,6 +20,23 @@ java {
     withSourcesJar()
 }
 
+application {
+    mainClass = 'io.confluent.ethaden.testjavassl.client.TestJavaSSLClient'
+    // We want to run in main project folder
+    tasks.run.workingDir = rootProject.projectDir
+}
+
+task runWithExpiredCert(type: JavaExec) {
+   classpath = sourceSets.main.runtimeClasspath
+
+   mainClass = 'io.confluent.ethaden.testjavassl.client.TestJavaSSLClient'
+   tasks.runWithExpiredCert.workingDir = rootProject.projectDir
+
+   // arguments to pass to the application
+   jvmArgs '-Djavax.net.ssl.keyStore=./ssl/client-expired.jks'
+   //args ''
+}
+
 jar {
     manifest {
         attributes(

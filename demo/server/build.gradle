@@ -22,13 +22,32 @@ java {
 
 dependencies {
     implementation project(':X509TrustmanagerCNReporting')
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.20.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.20.0'
+}
+
+application {
+    mainClass = 'io.confluent.ethaden.testjavassl.server.TestJavaSSLServer'
+    // We want to run in main project folder
+    tasks.run.workingDir = rootProject.projectDir
+}
+
+task runWithLogging(type: JavaExec) {
+   classpath = sourceSets.main.runtimeClasspath
+
+   mainClass = 'io.confluent.ethaden.testjavassl.server.TestJavaSSLServer'
+   tasks.runWithLogging.workingDir = rootProject.projectDir
+
+   // arguments to pass to the application
+   jvmArgs '-Djava.security.properties=java.security'
+   //args ''
 }
 
 jar {
     manifest {
         attributes(
-                "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" "),
-                "Main-Class": "io.confluent.ethaden.testjavassl.server.TestJavaSSLServer"
+                //"Class-Path": configurations.compileClasspath.collect { it.getName() }.join(" "),
+                "Main-Class": 'io.confluent.ethaden.testjavassl.server.TestJavaSSLServer'
         )
     }
 }
