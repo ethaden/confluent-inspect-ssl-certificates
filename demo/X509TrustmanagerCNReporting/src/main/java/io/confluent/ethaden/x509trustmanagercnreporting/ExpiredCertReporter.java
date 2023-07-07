@@ -19,14 +19,15 @@ import java.util.Set;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ExpiredCertReporter implements X509TrustManager {
 
     private X509TrustManager trustManager = null;
     // private static final Logger logger = LoggerFactory.getLogger(Main.class);
-    protected static final Logger parentLogger = LogManager.getLogger();
+    // protected static final Logger parentLogger = LogManager.getLogger();
+    private static final Logger logger = LoggerFactory.getLogger(ExpiredCertReporter.class);
 
     public ExpiredCertReporter(KeyStore trustStore)
             throws KeyStoreException, NoSuchAlgorithmException {
@@ -65,7 +66,7 @@ public final class ExpiredCertReporter implements X509TrustManager {
             // Certificate is invalid due to being expired. Grab the common name and report it back
             String commonName = wrappedCert.getSubjectX500Principal().getName();
             Date expiredDate = wrappedCert.getNotAfter();
-            parentLogger.info("Certificate for common name \"" + commonName + "\" expired on " + expiredDate,
+            logger.warn("Certificate for common name \"" + commonName + "\" expired on " + expiredDate + ": " +
                     invalidException);
             invalidException = new CertificateException(
                     "Certificate for common name \"" + commonName + "\" expired on " + expiredDate,

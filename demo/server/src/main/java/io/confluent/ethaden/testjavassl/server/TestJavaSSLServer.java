@@ -8,17 +8,20 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
-import java.security.Provider;
-import java.security.Security;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.confluent.ethaden.x509trustmanagercnreporting.ExpiredCertReporter;
 
 class TestJavaSSLServer {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestJavaSSLServer.class);
+
     public static void main(String args[]) {
         System.out.println("Usage: java -jar <jar file> [-e]");
         System.out.println("  -e: Report common name of expired client certificate in execption");
@@ -31,7 +34,6 @@ class TestJavaSSLServer {
                 reportCommonNameIfExpired = true;
             }
         }
-
 
         SSLServerSocketFactory ssf =
                 TestJavaSSLServer.getServerSocketFactory(reportCommonNameIfExpired);
