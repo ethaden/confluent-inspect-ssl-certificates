@@ -1,8 +1,9 @@
+# You can modify the used version of Confluent Platform in ".venv" by adapting variable CP_VERSION
 ---
 version: '3'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:${CP_VERSION}
     container_name: ${ZK_HOST}
     hostname: ${ZK_HOST}
     ports:
@@ -16,7 +17,7 @@ services:
       test: echo srvr | nc zookeeper 32181 || exit 1
 
   server:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:${CP_VERSION}
     container_name: ${BROKER_HOST}
     hostname: ${BROKER_HOST}
     ports:
