@@ -39,7 +39,8 @@ services:
       KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG4J_LOGGERS: "kafka.request.logger=DEBUG"
-      EXTRA_ARGS: -Djava.security.properties=/etc/kafka/java.security
+      # Enable next line to use custom Truststore Manager Factory for extended mTLS debugging
+      #EXTRA_ARGS: -Djava.security.properties=/etc/kafka/java.security
     volumes:
       - ./ssl:/etc/kafka/secrets
       - ./java.security:/etc/kafka/java.security

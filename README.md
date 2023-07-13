@@ -151,6 +151,12 @@ Then produce data to topic `test` (within folder `demo`):
 kafka-console-producer --bootstrap-server localhost:9092 --producer.config kafka/producer.properties -topic test
 ```
 
+You may also try to produce to the topic with an expired certificate:
+
+```bash
+kafka-console-producer --bootstrap-server localhost:9092 --producer.config kafka/producer-expired-ssl.properties -topic test
+```
+
 Read the data again (in folder `demo`):
 
 ```bash
